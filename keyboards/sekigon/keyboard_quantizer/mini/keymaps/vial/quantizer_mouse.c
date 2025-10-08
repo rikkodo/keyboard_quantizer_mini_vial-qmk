@@ -44,6 +44,18 @@ static int16_t  wheel_move_v            = 0;
 static int16_t  wheel_move_h            = 0;
 static uint16_t mouse_gesture_threshold = 50;
 
+// Rikkodo add scroll on layer start.
+static uint8_t cur_spd_rate_num = 1;
+static uint8_t cur_spd_rate_den = 1;
+static uint8_t scr_spd_rate_num = 1;
+static uint8_t scr_spd_rate_den = 32;
+static bool    mouse_hold       = false;
+
+static bool isScrollLayer(void) {
+    return IS_LAYER_ON(6) || IS_LAYER_ON(7);
+}
+// Rikkodo add scroll on layer end.
+
 // Start gesture recognition
 static void gesture_start(void) {
     dprint("Gesture start\n");
@@ -257,6 +269,44 @@ void mouse_report_hook(mouse_parse_result_t const* report) {
         mouse_send_flag = true;
         mouse.v -= scaled.yv;
     }
+    // Rikkodo add scroll on layer start.
+    static bool    is_scroll_prev = false;
+    static int16_t x_rem          = 0;
+    static int16_t y_rem          = 0;
+    bool           is_scroll      = isScrollLayer() && !mouse_hold;
+    // scrollが入れ替わったら、残分を消す
+    if (is_scroll != is_scroll_prev) {
+        x_rem = 0;
+        y_rem = 0;
+
+        is_scroll_prev = is_scroll;
+    }
+    uint8_t spd_rate_den = is_scroll ? scr_spd_rate_den : cur_spd_rate_den;
+    uint8_t spd_rate_num = is_scroll ? scr_spd_rate_num : cur_spd_rate_num;
+
+    int16_t x = (x_rem + report->x) * spd_rate_num / spd_rate_den;
+    int16_t y = (y_rem + report->y) * spd_rate_num / spd_rate_den;
+
+    if (spd_rate_den - spd_rate_num > 0) {
+        x_rem = (x_rem + report->x) - (x * spd_rate_den);
+        y_rem = (y_rem + report->y) - (y * spd_rate_den);
+    } else {
+        x_rem = 0;
+        y_rem = 0;
+    }
+    if (is_scroll) {
+        if (debug_enable) {
+            xprintf("OnScroll\n");
+        }
+        mouse.v -= y;
+        mouse.h -= x;
+        mouse.x = 0;
+        mouse.y = 0;
+    } else {
+        // mouse.x += x;
+        // mouse.y += y;
+    }
+    // Rikkodo add scroll on layer end.
 
     pointing_device_set_report(mouse);
 
@@ -299,6 +349,14 @@ bool process_record_mouse(uint16_t keycode, keyrecord_t* record) {
 
     switch (keycode) {
         case KC_BTN1 ... KC_BTN5: {
+            // Rikkodo add scroll on layer start.
+            // scroll layer内でマウスキーを押下したらカーソルに戻す
+            if (isScrollLayer()) {
+                mouse_hold = record->event.pressed;
+            } else {
+                mouse_hold = false;
+            }
+            // Rikkodo add scroll on layer end.
             mouse_send_flag = true;
             return true;
         } break;
