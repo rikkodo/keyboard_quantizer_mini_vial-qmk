@@ -299,7 +299,7 @@ void mouse_report_hook(mouse_parse_result_t const* report) {
             xprintf("OnScroll\n");
         }
         mouse.v -= y;
-        mouse.h -= x;
+        mouse.h += x;
         mouse.x = 0;
         mouse.y = 0;
     } else {

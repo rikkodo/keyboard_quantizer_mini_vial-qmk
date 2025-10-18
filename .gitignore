@@ -114,3 +114,6 @@ user_song_list.h
 compile_commands.json
 .clangd/
 .cache/
+
+# ADD
+!result/*uf2

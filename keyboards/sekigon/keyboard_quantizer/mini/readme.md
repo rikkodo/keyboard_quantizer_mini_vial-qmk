@@ -24,3 +24,16 @@ Enter the bootloader in 2 ways:
 
 * **Keycode in layout**: Press the key mapped to `QK_BOOT` if it is available
 * **Virtser**: Send `b` to the device through virtser
+
+## 追記
+
+ビルド
+
+    ``` sh
+    pwd
+    keyboard_quantizer_mini_vial-qmk
+    make sekigon/keyboard_quantizer/mini:vial:uf2
+    cp -ip .build/sekigon_keyboard_quantizer_mini_vial.uf2 ./result
+    ```
+
+remapでBOOTLOADERキーを入れる
